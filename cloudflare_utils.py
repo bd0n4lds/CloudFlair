@@ -26,7 +26,7 @@ def get_cloudflare_ip_ranges():
     ]
 
     try:
-        print('[*] Retrieving Cloudflare IP ranges from {}'.format(cloudflare_ip_ranges_url))
+        print(f'[*] Retrieving Cloudflare IP ranges from {cloudflare_ip_ranges_url}')
         page_content = requests.get(cloudflare_ip_ranges_url, timeout=10)
         ip_ranges_text = page_content.text
         ip_ranges = [ip for ip in ip_ranges_text.split("\n") if ip]
@@ -48,17 +48,13 @@ else:
 
 
 def is_cloudflare_ip(ip):
-    for cloudflare_subnet in cloudflare_subnets:
-        if cloudflare_subnet.overlaps(ipaddress.ip_network(ip)):
-            return True
-    return False
+    return any(
+        cloudflare_subnet.overlaps(ipaddress.ip_network(ip))
+        for cloudflare_subnet in cloudflare_subnets
+    )
 
 
 def uses_cloudflare(domain):
     answers = dns.resolver.query(domain, 'A')
 
-    for answer in answers:
-        if is_cloudflare_ip(answer):
-            return True
-
-    return False
+    return any(is_cloudflare_ip(answer) for answer in answers)

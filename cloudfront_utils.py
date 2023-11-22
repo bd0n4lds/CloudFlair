@@ -12,7 +12,7 @@ def get_cloudfront_ip_ranges():
     ip_ranges = []
 
     try:
-        print('[*] Retrieving Cloudfront IP ranges from {}'.format(cloudfront_ip_ranges_url))
+        print(f'[*] Retrieving Cloudfront IP ranges from {cloudfront_ip_ranges_url}')
         page_content = requests.get(cloudfront_ip_ranges_url, timeout=10)
         ip_ranges_json = json.loads(page_content.text)
         ip_ranges = sorted({x for v in ip_ranges_json.values() for x in v})
@@ -21,7 +21,9 @@ def get_cloudfront_ip_ranges():
         sys.stderr.write('[-] Failed to retrieve Cloudfront IP ranges from cloudfront - trying alternate source')
 
         try:
-            print('[*] Retrieving Cloudfront IP ranges from {}'.format(cloudfront_backup_ip_ranges_url))
+            print(
+                f'[*] Retrieving Cloudfront IP ranges from {cloudfront_backup_ip_ranges_url}'
+            )
             page_content = requests.get(cloudfront_backup_ip_ranges_url, timeout=10)
             ip_ranges_json = json.loads(page_content.text)
             filtered_v4_ip_ranges = [x['ip_prefix'] for x in ip_ranges_json['prefixes'] if x['service'] == 'CLOUDFRONT']
@@ -42,17 +44,13 @@ def is_cloudfront_ip(ip):
         else:
             is_cloudfront_ip.cloudfront_subnets = [ipaddress.ip_network(ip_range) for ip_range in cloudfront_ip_ranges]
 
-    for cloudfront_subnet in is_cloudfront_ip.cloudfront_subnets:
-        if cloudfront_subnet.overlaps(ipaddress.ip_network(ip)):
-            return True
-    return False
+    return any(
+        cloudfront_subnet.overlaps(ipaddress.ip_network(ip))
+        for cloudfront_subnet in is_cloudfront_ip.cloudfront_subnets
+    )
 
 
 def uses_cloudfront(domain):
     answers = dns.resolver.query(domain, 'A')
 
-    for answer in answers:
-        if is_cloudfront_ip(answer):
-            return True
-
-    return False
+    return any(is_cloudfront_ip(answer) for answer in answers)
