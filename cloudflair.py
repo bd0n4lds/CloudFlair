@@ -48,19 +48,19 @@ def find_hosts(domain, censys_api_id, censys_api_secret, use_cloudfront):
 
     if not use_cloudfront:
         if not cloudflare_utils.uses_cloudflare(domain):
-            print('[-] The domain "%s" does not seem to be behind CloudFlare.' % domain)
+            print(f'[-] The domain "{domain}" does not seem to be behind CloudFlare.')
             exit(0)
 
         print('[*] The target appears to be behind CloudFlare.')
 
     else: 
         if not cloudfront_utils.uses_cloudfront(domain):
-            print('[-] The domain "%s" does not seem to be behind CloudFront.' % domain)
+            print(f'[-] The domain "{domain}" does not seem to be behind CloudFront.')
             exit(0)
 
         print('[*] The target appears to be behind CloudFront.')
 
-    print('[*] Looking for certificates matching "%s" using Censys' % domain)
+    print(f'[*] Looking for certificates matching "{domain}" using Censys')
     cert_fingerprints = censys_search.get_certificates(domain, censys_api_id, censys_api_secret)
     cert_fingerprints = list(cert_fingerprints)
     cert_fingerprints_count = len(cert_fingerprints)
@@ -93,13 +93,13 @@ def find_hosts(domain, censys_api_id, censys_api_secret, use_cloudfront):
 
 def print_hosts(hosts):
     for host in hosts:
-        print('  - %s' % host)
+        print(f'  - {host}')
     print('')
 
 
 def retrieve_original_page(domain):
-    url = 'https://' + domain
-    print('[*] Retrieving target homepage at %s' % url)
+    url = f'https://{domain}'
+    print(f'[*] Retrieving target homepage at {url}')
     try:
         headers = {'User-Agent': get_user_agent()}
         original_response = requests.get(url, timeout=config['http_timeout_seconds'], headers=headers)
@@ -115,13 +115,13 @@ def retrieve_original_page(domain):
         exit(1)
 
     if original_response.url != url:
-        print('[*] "%s" redirected to "%s"' % (url, original_response.url))
+        print(f'[*] "{url}" redirected to "{original_response.url}"')
 
     return original_response
 
 def print_origins(origins):
     for origin in origins:
-        print('  - %s (%s)' % (origin[0], origin[1]))
+        print(f'  - {origin[0]} ({origin[1]})')
 
     print('')
 
@@ -144,8 +144,8 @@ def find_origins(domain, candidates):
     origins = []
     for host in candidates:
         try:
-            print('  - %s' % host)
-            url = 'https://' + host
+            print(f'  - {host}')
+            url = f'https://{host}'
             headers = {
                 'Host': host_header_value, # only keep the TLD, without any slashes
                 'User-Agent': get_user_agent()
@@ -163,10 +163,10 @@ def find_origins(domain, candidates):
             continue
 
         if response.text == original_response.text:
-            origins.append((host, 'HTML content identical to %s' % domain))
+            origins.append((host, f'HTML content identical to {domain}'))
             continue
 
-        if len(response.text) > 0:
+        if response.text != "":
             try:
                 page_similarity = similarity(response.text, original_response.text)
             except:

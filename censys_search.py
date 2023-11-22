@@ -44,9 +44,7 @@ def get_hosts(cert_fingerprints, api_id, api_secret):
         )
         hosts_query = f"services.tls.certificates.leaf_data.fingerprint: {{{','.join(cert_fingerprints)}}}"
         hosts_search_results = censys_hosts.search(hosts_query).view_all()
-        return set(
-            [r["ip"] for r in hosts_search_results.values()]
-        )
+        return {r["ip"] for r in hosts_search_results.values()}
     except CensysUnauthorizedException:
         sys.stderr.write(INVALID_CREDS)
         exit(1)
